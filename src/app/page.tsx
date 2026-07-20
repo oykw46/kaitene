@@ -17,51 +17,78 @@ export default function Home() {
 	const [writeTime, setWriteTime] = useState(300); // 6-3-5法の「5分」
 
 	// Supabaseに会議室を作って自動遷移させる関数
-	const handleCreateRoom: React.ComponentProps<'form'>['onSubmit'] = async (e) => {
+	// const handleCreateRoom: React.ComponentProps<'form'>['onSubmit'] = async (e) => {
+	// 	e.preventDefault();
+	// 	if (!theme.trim() || !session) return;
+
+	// 	setLoading(true);
+	// 	try {
+	// 		const { data, error } = await supabase
+	// 			.from('rooms')
+	// 			.insert([
+	// 				{
+	// 					title: theme,
+	// 					created_by: session.id,
+	// 					max_participants: 6,
+	// 					idea_count: ideaCount,
+	// 					write_time: writeTime,
+	// 					interval_time: 5
+	// 				}
+	// 			])
+	// 			.select()
+	// 			.single();
+
+	// 		if (error) throw error;
+
+	// 		if (data) {
+	// 			// 作成された部屋の待機画面へ遷移させます。
+	// 			router.push(`/room/${data.id}`);
+	// 		}
+	// 	} catch (err: any) {
+    //         console.error('会議室の作成に失敗しました。詳細エラー:', {
+    //             message: err.message,
+    //             details: err.details,
+    //             code: err.code
+	// 		});
+	// 		// 画面のアラートにも具体的な原因を表示
+    //         alert(`会議室の作成に失敗しました。\nエラー内容: ${err.message || '不明なエラー'}`);
+    //         setLoading(false);
+	// 	}
+	// };
+
+	const handleCreateRoom = async (e: React.FormEvent) => {
+		// フォーム送信によるページの自動リロードを防ぎます
 		e.preventDefault();
-		if (!theme.trim() || !session) return;
+
+		// 1. ボタンが押されたことを画面とコンソールで確実に確認します
+		console.log("【確認】ボタンが正常に押されました！");
+		alert("ボタンが押されました。Supabaseへの通信を開始します。");
 
 		setLoading(true);
+
 		try {
-			// 1. 環境変数が本番環境で正しく読み込まれているかチェック
-			const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-			const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+		// 2. Supabaseへデータを追加します ('name' 列に値を入れます)
+		const { data, error } = await supabase
+			.from("rooms")
+			.insert([{ name: "新しい会議室" }])
+			.select();
 
-			console.log("【デバッグ】URL存在チェック:", !!supabaseUrl);
-			console.log("【デバッグ】Key存在チェック:", !!supabaseKey);
+		// 3. エラーが発生した場合の処理
+		if (error) {
+			console.error("【Supabaseエラー】:", error);
+			alert(`Supabaseエラーが発生しました:\n${error.message}`);
+			return;
+		}
 
-			if (!supabaseUrl || !supabaseKey) {
-				alert("エラー: Vercelの環境変数 (NEXT_PUBLIC_...) が設定されていないか、読み込めていません。");
-				setLoading(false);
-				return;
-			}
+		// 4. 成功した場合の処理
+		console.log("【成功】作成されたデータ:", data);
+		alert("🎉 会議室の作成に成功しました！");
 
-			// 2. Supabaseへ会議室作成のリクエストを送信
-			const { data, error } = await supabase
-				.from("rooms") // テーブル名（ご自身の環境に合わせて変更してください）
-				.insert([{ name: "新しい会議室" }])
-				.select();
-
-			// 3. エラーが発生した場合、アラートで画面に表示
-			if (error) {
-				console.error("Supabaseエラー詳細:", error);
-				alert(`Supabaseエラー発生:\nメッセージ: ${error.message}\n詳細: ${error.details}\nヒント: ${error.hint}`);
-				setLoading(false);
-				return;
-			}
-
-			// 4. 成功した場合
-			console.log("作成成功:", data);
-			alert("会議室の作成に成功しました！");
-			
-			// 必要に応じて画面遷移など（例: router.push(`/room/${data[0].id}`)）
-
-			} catch (err: any) {
-		// 想定外のJavaScriptエラーをキャッチして表示
-		console.error("予期せぬエラー:", err);
-		alert(`予期せぬエラーが発生しました: ${err?.message || JSON.stringify(err)}`);
+		} catch (err: any) {
+		console.error("【予期せぬエラー】:", err);
+		alert(`エラーが発生しました: ${err?.message || "不明なエラー"}`);
 		} finally {
-			setLoading(false);
+		setLoading(false);
 		}
 	};
 
@@ -128,6 +155,7 @@ export default function Home() {
 
 					<button
 						type="submit"
+        				onClick={handleCreateRoom}
 						disabled={loading || !theme.trim()}
 						className="w-full py-4 bg-cyan-500 hover:bg-sky-600 text-white font-bold rounded-xl transition-all shadow-md shadow-cyan-500/10 cursor-pointer mt-2 text-sm"
 					>
