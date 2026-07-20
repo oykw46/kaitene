@@ -23,36 +23,45 @@ export default function Home() {
 
 		setLoading(true);
 		try {
-			const { data, error } = await supabase
-				.from('rooms')
-				.insert([
-					{
-						title: theme,
-						created_by: session.id,
-						max_participants: 6,
-						idea_count: ideaCount,
-						write_time: writeTime,
-						interval_time: 5
-					}
-				])
-				.select()
-				.single();
+			// 1. 環境変数が本番環境で正しく読み込まれているかチェック
+			const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+			const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-			if (error) throw error;
+			console.log("【デバッグ】URL存在チェック:", !!supabaseUrl);
+			console.log("【デバッグ】Key存在チェック:", !!supabaseKey);
 
-			if (data) {
-				// 作成された部屋の待機画面へ遷移させます。
-				router.push(`/room/${data.id}`);
+			if (!supabaseUrl || !supabaseKey) {
+				alert("エラー: Vercelの環境変数 (NEXT_PUBLIC_...) が設定されていないか、読み込めていません。");
+				setLoading(false);
+				return;
 			}
-		} catch (err: any) {
-            console.error('会議室の作成に失敗しました。詳細エラー:', {
-                message: err.message,
-                details: err.details,
-                code: err.code
-			});
-			// 画面のアラートにも具体的な原因を表示
-            alert(`会議室の作成に失敗しました。\nエラー内容: ${err.message || '不明なエラー'}`);
-            setLoading(false);
+
+			// 2. Supabaseへ会議室作成のリクエストを送信
+			const { data, error } = await supabase
+				.from("rooms") // テーブル名（ご自身の環境に合わせて変更してください）
+				.insert([{ name: "新しい会議室" }])
+				.select();
+
+			// 3. エラーが発生した場合、アラートで画面に表示
+			if (error) {
+				console.error("Supabaseエラー詳細:", error);
+				alert(`Supabaseエラー発生:\nメッセージ: ${error.message}\n詳細: ${error.details}\nヒント: ${error.hint}`);
+				setLoading(false);
+				return;
+			}
+
+			// 4. 成功した場合
+			console.log("作成成功:", data);
+			alert("会議室の作成に成功しました！");
+			
+			// 必要に応じて画面遷移など（例: router.push(`/room/${data[0].id}`)）
+
+			} catch (err: any) {
+		// 想定外のJavaScriptエラーをキャッチして表示
+		console.error("予期せぬエラー:", err);
+		alert(`予期せぬエラーが発生しました: ${err?.message || JSON.stringify(err)}`);
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -109,7 +118,6 @@ export default function Home() {
 								(Number(e.target.value))}
 								className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-cyan-500 transition-all text-sm cursor-pointer appearance-none"
 							>
-								<option value={10}>10秒（テスト用）</option>
 								<option value={30}>30秒</option>
 								<option value={60}>1分</option>
 								<option value={180}>3分</option>
