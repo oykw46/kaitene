@@ -61,8 +61,8 @@ export default function Home() {
 			<div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-sm border border-slate-200">
 				{/* ロゴ・コンセプト */}
 				<div className="text-center mb-8">
-					<h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-2">
-						Kaitene
+					<h1 className="text-3xl font-extrabold text-slate-900 mb-2 tracking-wide">
+						kaiten<span className="text-sky-500">e</span>
 					</h1>
 					<p className="text-sm text-slate-600">
 						静かな人のアイデアも、ちゃんと会議に届く。
