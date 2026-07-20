@@ -28,7 +28,9 @@ interface Participant {
 export default function Room() {
     const params = useParams();
     const router = useRouter();
-    const roomId = params.id as string; // URL末尾から会議室のIDを取得します。
+    // URLパラメータから安全に roomId を取得します
+    const roomId = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
+
     const { session } = useUserSession();
     const [room, setRoom] = useState<RoomData | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]); // リアルタイム参加者リストの箱
@@ -39,7 +41,7 @@ export default function Room() {
 
     // 1. 全ラウンドが完了して status が 'result' になった時の自動遷移処理
     useEffect(() => {
-        if (room?.status === 'result') {
+        if (room?.status === 'result' && roomId) {
             console.log('全ラウンドが終了しました。結果画面へ移動します。');
             router.push(`/room/${roomId}/result`);
         }
@@ -47,14 +49,16 @@ export default function Room() {
 
     // 2. 部屋データ・参加者・Supabaseリアルタイム監視
     useEffect(() => {
-        if (!roomId || !session || !session.id) return;
-    
-        // セッションIDが確定した段階で、固有の偉人プロフィールを生成します。
-        const myProfile = getUserVirtualProfile(session.id);
+        if (!roomId || !session?.id) return;
+
+        const currentUserId = session.id;
+
+        // セッションIDが確定した段階で、固有の偉人プロフィールを生成して保存します
+        const myProfile = getUserVirtualProfile(currentUserId);
         setMyVirtualProfile(myProfile);
         setMyVirtualName(myProfile.name);
 
-        // 部屋データと参加者データの取得
+        // 初回の部屋データおよび参加者データの取得関数
         const fetchRoomAndParticipants = async () => {
             const { data: roomData, error: roomError } = await supabase
             .from('rooms')
@@ -70,17 +74,17 @@ export default function Room() {
 
         if (roomData) {
             setRoom(roomData);
-            // 自分がこの部屋の作成者（ホスト）かどうかを判定します。
-            if (roomData.created_by === session.id) {
-                setIsHost(true);
-            }
-            
-            // 自分の偉人名を座席表（participantsテーブル）に記録します。
-            await supabase
-                .from('participants')
-                .upsert(
-                    { room_id: roomId, user_id: session.id, name: myProfile.name },
-                    { onConflict: 'room_id, user_id' } // 同じ部屋・ユーザーの組み合わせが既に存在する場合は更新します。
+                // 自分がホストかどうかを判定
+                if (roomData.created_by === currentUserId) {
+                    setIsHost(true);
+                }
+                
+                // 自分の偉人名を座席表（participantsテーブル）にアップサート（追加・更新）します
+                await supabase
+                    .from('participants')
+                    .upsert(
+                        { room_id: roomId, user_id: currentUserId, name: myProfile.name },
+                        { onConflict: 'room_id, user_id' }
                 );
         }
 
@@ -139,17 +143,11 @@ export default function Room() {
                     table: 'ideas' 
                 },
                 async () => {
-                    // 現在の部屋・現在のステータス（ラウンド）に紐づくアイデアと参加者を全件取得します。
-                    const { data: latestRoom } = await supabase
-                        .from('rooms')
-                        .select('*')
-                        .eq('id', roomId)
-                        .single();
-                    
-                    const { data: latestParts } = await supabase
-                        .from('participants')
-                        .select('*')
-                        .eq('room_id', roomId);
+                    // 最新の部屋情報と参加者情報を並行取得
+                    const [{ data: latestRoom }, { data: latestParts }] = await Promise.all([
+                        supabase.from('rooms').select('*').eq('id', roomId).single(),
+                        supabase.from('participants').select('*').eq('room_id', roomId)
+                    ]);
 
                     if (!latestRoom || !latestParts) return;
 
@@ -163,7 +161,7 @@ export default function Room() {
 
                         // 最新のステータス（数値型）に紐づくアイデアを全件取得します。
                         // 【修正ポイント②】文字列ではなく、数値化した「currentRoundNum」で比較します。
-                    const { data: currentIdeas } = await supabase
+                        const { data: currentIdeas } = await supabase
                         .from('ideas')
                         .select('user_id') // 誰が送ったか（ユーザーID）だけを取得
                         .eq('room_id', roomId)
@@ -177,7 +175,7 @@ export default function Room() {
 
                         // ホストの画面だけで、全員の提出完了を検知して次のラウンドへ進めます。
                         // ホストの判定も最新データ（latestRoom.created_by）を基準にします。
-                        const amIHost = latestRoom.created_by === session.id;
+                        const amIHost = latestRoom.created_by === currentUserId;
 
                         if (amIHost && totalSubmittedUsers >= totalParticipants) {
                             // 次のラウンド番号を設定します。
@@ -206,7 +204,7 @@ export default function Room() {
                 supabase.removeChannel(participantsChannel);
                 supabase.removeChannel(ideasChannel);
             };
-    }, [roomId, session]);
+    }, [roomId, session?.id]);
 
     // ホストがボタンを押して会議を開始する関数
     const handleStartMeeting = async () => {
