@@ -17,78 +17,44 @@ export default function Home() {
 	const [writeTime, setWriteTime] = useState(300); // 6-3-5法の「5分」
 
 	// Supabaseに会議室を作って自動遷移させる関数
-	// const handleCreateRoom: React.ComponentProps<'form'>['onSubmit'] = async (e) => {
-	// 	e.preventDefault();
-	// 	if (!theme.trim() || !session) return;
-
-	// 	setLoading(true);
-	// 	try {
-	// 		const { data, error } = await supabase
-	// 			.from('rooms')
-	// 			.insert([
-	// 				{
-	// 					title: theme,
-	// 					created_by: session.id,
-	// 					max_participants: 6,
-	// 					idea_count: ideaCount,
-	// 					write_time: writeTime,
-	// 					interval_time: 5
-	// 				}
-	// 			])
-	// 			.select()
-	// 			.single();
-
-	// 		if (error) throw error;
-
-	// 		if (data) {
-	// 			// 作成された部屋の待機画面へ遷移させます。
-	// 			router.push(`/room/${data.id}`);
-	// 		}
-	// 	} catch (err: any) {
-    //         console.error('会議室の作成に失敗しました。詳細エラー:', {
-    //             message: err.message,
-    //             details: err.details,
-    //             code: err.code
-	// 		});
-	// 		// 画面のアラートにも具体的な原因を表示
-    //         alert(`会議室の作成に失敗しました。\nエラー内容: ${err.message || '不明なエラー'}`);
-    //         setLoading(false);
-	// 	}
-	// };
 
 	const handleCreateRoom = async (e: React.FormEvent) => {
 		e.preventDefault();
+        e.preventDefault();
+
+        // テーマが空、または処理中の場合は中断
+        if (!theme.trim() || loading) return;
 		setLoading(true);
 
 		try {
-		// ----------------------------------------------------
-		// Supabaseへデータを追加します
-		// エラーの原因となっていた 'title' 列にも値を渡すように修正しました
-		// ----------------------------------------------------
+		// Supabaseへ実際のフォーム入力値を送信
 		const { data, error } = await supabase
 			.from("rooms")
 			.insert([
-			{
-				title: "新しい会議室", // 👈 必須項目(title)に値をセットします
-				name: "新しい会議室",  // 👈 先ほど追加した name 列にも値をセットします
-			},
+				{
+					title: theme,                  // 画面で入力されたテーマ
+					name: theme,                   // name列にも同じテーマを設定
+					created_by: session?.id,       // 作成者のID（セッションが存在する場合）
+					max_participants: 6,
+					idea_count: ideaCount,
+					write_time: writeTime,
+					interval_time: 5
+				}
 			])
-			.select();
+			.select()
+			.single();
 
-		if (error) {
-			console.error("【Supabaseエラー】:", error);
-			alert(`Supabaseエラーが発生しました:\n${error.message}`);
-			return;
-		}
+            if (error) throw error;
 
-		console.log("【成功】作成されたデータ:", data);
-		alert("🎉 会議室の作成に成功しました！");
+            if (data) {
+                // 作成された部屋の待機画面へ自動で移動します
+                router.push(`/room/${data.id}`);
+            }
 
 		} catch (err: any) {
-		console.error("【予期せぬエラー】:", err);
-		alert(`エラーが発生しました: ${err?.message || "不明なエラー"}`);
-		} finally {
-		setLoading(false);
+            console.error('会議室の作成エラー:', err);
+            alert(`会議室の作成に失敗しました。\n${err.message || '不明なエラー'}`);
+			setLoading(false);
 		}
 	};
 
