@@ -57,30 +57,30 @@ export default function Home() {
 	// };
 
 	const handleCreateRoom = async (e: React.FormEvent) => {
-		// フォーム送信によるページの自動リロードを防ぎます
 		e.preventDefault();
-
-		// 1. ボタンが押されたことを画面とコンソールで確実に確認します
-		console.log("【確認】ボタンが正常に押されました！");
-		alert("ボタンが押されました。Supabaseへの通信を開始します。");
-
 		setLoading(true);
 
 		try {
-		// 2. Supabaseへデータを追加します ('name' 列に値を入れます)
+		// ----------------------------------------------------
+		// Supabaseへデータを追加します
+		// エラーの原因となっていた 'title' 列にも値を渡すように修正しました
+		// ----------------------------------------------------
 		const { data, error } = await supabase
 			.from("rooms")
-			.insert([{ name: "新しい会議室" }])
+			.insert([
+			{
+				title: "新しい会議室", // 👈 必須項目(title)に値をセットします
+				name: "新しい会議室",  // 👈 先ほど追加した name 列にも値をセットします
+			},
+			])
 			.select();
 
-		// 3. エラーが発生した場合の処理
 		if (error) {
 			console.error("【Supabaseエラー】:", error);
 			alert(`Supabaseエラーが発生しました:\n${error.message}`);
 			return;
 		}
 
-		// 4. 成功した場合の処理
 		console.log("【成功】作成されたデータ:", data);
 		alert("🎉 会議室の作成に成功しました！");
 
