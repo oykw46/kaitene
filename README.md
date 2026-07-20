@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# オンライン・ブレインライティング アプリ
 
-## Getting Started
+リアルタイムで複数人とアイデア出しが行える、ブレインライティング（6-3-5法など）をベースにしたWebアプリケーションです。
 
-First, run the development server:
+---
+
+## 💡 開発の背景（なぜアプリなのか？）
+
+ブレインライティングは沈黙の中で質の高いアイデアを大量に生み出せる優れた手法ですが、従来の「紙とペン」による実施にはいくつかの課題がありました。
+
+1. **リモートワーク非対応**: メンバーが同じ場所に集まり、紙を回す必要があった。
+2. **転記の手間**: 終了後に紙に書かれた大量のアイデアをテキストデータ化する作業が発生していた。
+3. **発想のマンネリ化**: 参加者自身の思考の枠にとらわれがちだった。
+
+本アプリは、オンラインで集まれる**リアルタイム同期**と、**歴史上の偉人等の視点を借りる機能**を組み合わせることで、いつでもどこでも新しいひらめきを生み出せるツールとして開発されました。
+
+---
+
+## 📖 目次
+
+1. [主な機能](#-主な機能)
+2. [使用技術（Tech Stack）](#-使用技術tech-stack)
+3. [環境構築手順](#-環境構築手順)
+4. [環境変数の設定](#-環境変数の設定)
+5. [Supabaseの初期設定](#-supabaseの初期設定)
+6. [ビルドおよびデプロイ](#-ビルドおよびデプロイ)
+7. [ライセンス / 注意事項](#-ライセンス--注意事項)
+
+---
+
+## 主な機能
+
+- **部屋の作成・参加**: 部屋IDを使って匿名で簡単に共有・参加が可能
+- **リアルタイム同期**: 他の参加者の入室やアイデア投稿が即座に反映
+- **仮想キャラクター機能**: アインシュタインやエジソンなど、歴史上の人物の視点でアイデアを投稿・閲覧
+- **結果の確認・出力**: 投稿されたアイデアの一覧表示
+
+---
+
+## 使用技術（Tech Stack）
+
+- **フロントエンド**: Next.js (App Router), React, TypeScript
+- **スタイリング**: Tailwind CSS
+- **データベース / リアルタイム通信**: Supabase (PostgreSQL, Realtime)
+- **ホスティング想定**: Vercel
+
+---
+
+## 環境構築手順
+
+### 1. リポジトリのクローンと依存パッケージのインストール
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# パッケージのインストール
+npm install
