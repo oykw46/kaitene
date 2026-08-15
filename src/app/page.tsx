@@ -17,9 +17,7 @@ export default function Home() {
 	const [writeTime, setWriteTime] = useState(300); // 6-3-5法の「5分」
 
 	// Supabaseに会議室を作って自動遷移させる関数
-
 	const handleCreateRoom = async (e: React.FormEvent) => {
-		e.preventDefault();
         e.preventDefault();
 
         // テーマが空、または処理中の場合は中断
@@ -27,33 +25,45 @@ export default function Home() {
 		setLoading(true);
 
 		try {
-		// Supabaseへ実際のフォーム入力値を送信
-		const { data, error } = await supabase
-			.from("rooms")
-			.insert([
-				{
-					title: theme,                  // 画面で入力されたテーマ
-					name: theme,                   // name列にも同じテーマを設定
-					created_by: session?.id,       // 作成者のID（セッションが存在する場合）
-					max_participants: 6,
-					idea_count: ideaCount,
-					write_time: writeTime,
-					interval_time: 5
-				}
-			])
-			.select()
-			.single();
+            // ユーザーIDの確保（セッションが無い場合はその場で匿名ログインを実行）
+            let currentUserId = session?.id;
 
-            if (error) throw error;
-
-            if (data) {
-                // 作成された部屋の待機画面へ自動で移動します
-                router.push(`/room/${data.id}`);
+            if (!currentUserId) {
+                console.log("セッションを確認・自動作成中...");
+                const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
+                if (authError || !authData.session) {
+                    throw new Error(`認証に失敗しました: ${authError?.message || '不明なエラー'}`);
+                }
+                currentUserId = authData.session.user.id;
             }
 
+			// Supabaseへ実際のフォーム入力値を送信
+			const { data, error } = await supabase
+				.from("rooms")
+				.insert([
+					{
+						title: theme,                  // 画面で入力されたテーマ
+						name: theme,                   // name列にも同じテーマを設定
+						created_by: currentUserId,     // 確実に取得したユーザーID
+						max_participants: 6,
+						idea_count: ideaCount,
+						write_time: writeTime,
+						interval_time: 5
+					}
+				])
+				.select()
+				.single();
+
+			if (error) throw error;
+
+			if (data) {
+				// 作成された部屋の待機画面へ自動で移動します
+				router.push(`/room/${data.id}`);
+			}
+
 		} catch (err: any) {
-            console.error('会議室の作成エラー:', err);
-            alert(`会議室の作成に失敗しました。\n${err.message || '不明なエラー'}`);
+			console.error('会議室の作成エラー:', err);
+			alert(`会議室の作成に失敗しました。\n${err.message || '不明なエラー'}`);
 			setLoading(false);
 		}
 	};
@@ -93,22 +103,19 @@ export default function Home() {
 							<label className="text-xs font-bold text-slate-500">アイデアの個数</label>
 							<select
 								value={ideaCount}
-								onChange={(e) => setIdeaCount
-								(Number(e.target.value))}
+								onChange={(e) => setIdeaCount(Number(e.target.value))}
 								className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-cyan-500 transition-all text-sm cursor-pointer appearance-none"
 							>
 								<option value={1}>1個</option>
 								<option value={2}>2個</option>
 								<option value={3}>3個</option>
-
 							</select>
 						</div>
 						<div className="space-y-1">
 							<label className="text-xs font-bold text-slate-500">1ラウンドの記入時間</label>
 							<select
 								value={writeTime}
-								onChange={(e) => setWriteTime
-								(Number(e.target.value))}
+								onChange={(e) => setWriteTime(Number(e.target.value))}
 								className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-cyan-500 transition-all text-sm cursor-pointer appearance-none"
 							>
 								<option value={30}>30秒</option>
@@ -121,7 +128,6 @@ export default function Home() {
 
 					<button
 						type="submit"
-        				onClick={handleCreateRoom}
 						disabled={loading || !theme.trim()}
 						className="w-full py-4 bg-cyan-500 hover:bg-sky-600 text-white font-bold rounded-xl transition-all shadow-md shadow-cyan-500/10 cursor-pointer mt-2 text-sm"
 					>

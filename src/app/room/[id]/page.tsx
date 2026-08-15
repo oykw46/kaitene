@@ -1,6 +1,4 @@
 'use client';
-// ページの静的キャッシュを防ぎ、常に動的（Dynamic）にレンダリングします
-export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from 'next/navigation';
