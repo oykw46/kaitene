@@ -65,10 +65,12 @@ export default function Home() {
 
             console.log("【進行状況】5. データ送信完了！画面遷移します:", data.id);
 
-			if (data) {
-				// 作成された部屋の待機画面へ自動で移動します
-				router.push(`/room/${data.id}`);
-			}
+            if (data?.id) {
+                // router.pushで止まるケースを防ぐため、確実なページ移動を実行します
+                window.location.href = `/room/${data.id}`;
+            } else {
+                throw new Error("部屋IDの取得に失敗しました。");
+            }
 
 		} catch (err: any) {
 			console.error('会議室の作成エラー:', err);
