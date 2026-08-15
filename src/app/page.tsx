@@ -23,19 +23,23 @@ export default function Home() {
         // テーマが空、または処理中の場合は中断
         if (!theme.trim() || loading) return;
 		setLoading(true);
+        console.log("【進行状況】1. 会議室作成ボタンが押されました");
 
 		try {
             // ユーザーIDの確保（セッションが無い場合はその場で匿名ログインを実行）
             let currentUserId = session?.id;
 
             if (!currentUserId) {
-                console.log("セッションを確認・自動作成中...");
+                console.log("【進行状況】2. セッションを確認・自動作成中...");
                 const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
                 if (authError || !authData.session) {
                     throw new Error(`認証に失敗しました: ${authError?.message || '不明なエラー'}`);
                 }
                 currentUserId = authData.session.user.id;
+                console.log("【進行状況】3. セッション取得成功:", currentUserId);
             }
+
+            console.log("【進行状況】4. Supabase(roomsテーブル)へデータ送信開始...");
 
 			// Supabaseへ実際のフォーム入力値を送信
 			const { data, error } = await supabase
@@ -54,7 +58,12 @@ export default function Home() {
 				.select()
 				.single();
 
-			if (error) throw error;
+			if (error) {
+                console.error("【エラー詳細】:", error);
+                throw error;
+            }
+
+            console.log("【進行状況】5. データ送信完了！画面遷移します:", data.id);
 
 			if (data) {
 				// 作成された部屋の待機画面へ自動で移動します
